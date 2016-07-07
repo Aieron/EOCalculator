@@ -1,9 +1,9 @@
-import glob
+import globs
 
 
 def main():
     allrows = ''
-    if glob.DBSOURCE == 'local':
+    if globs.DBSOURCE == 'local':
         import shelve
         allrows = shelve.open('drows.db')
         try:
@@ -13,7 +13,7 @@ def main():
         finally:
             allrows.close()
         allrows = shelve.open('drows.db')
-    elif glob.DBSOURCE == 'gdocs':
+    elif globs.DBSOURCE == 'gdocs':
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
 
@@ -26,7 +26,7 @@ def main():
     else:
         pass
 
-    print(glob.DBSOURCE)
+    print(globs.DBSOURCE)
 
     fargs = {}
     for item in allrows['0']:
