@@ -12,17 +12,34 @@ def main():
 
     s = shelve.open('drows.db')
     try:
-        s['foo'] = {1: 'foo', 2: 'bar', 3: 'go'}
-        s['bar'] = {1: 'foo', 2: 'bar', 3: 'go'}
-
+        s['0'] = {1: 'foo', 2: 'bar', 3: 'go'}
+        s['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!'}
+        s['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?'}
     finally:
         s.close()
     s = shelve.open('drows.db')
 
+    fargs = {}
+    for item in s['0']:
+        fname = s['0'][item]
+        if fname in globals():
+            fargs[fname] = {}
+            from funcsigs import _empty, signature
+            sig = signature(eval(fname))
+            print("%s is a function with arguments %s" % (fname, sig))
+            for param in sig.parameters.values():
+                pname = param.name
+                pdefault = param.default
+                if pdefault is _empty:
+                    print ('Required parameter: %s %s' % (fname, pname))
+                else:
+                    fargs[fname][pname] = pdefault
+                    print('I have default value for: %s %s %s' % (fname, pname, pdefault))
+    print(fargs)
+
     for item in s:
-        """Prints values instead of the keys"""
-        # print(item + ": " + str(s[item]))
-        print("%s: %s" % (item, s[item]))
+        if item != '0':
+            print("%s: %s" % (item, s[item]))
 
 
 # noinspection PyBroadException
@@ -31,6 +48,11 @@ def delrow(s, rowkey):
         del s[rowkey]
     except:
         pass
+
+
+def go(job, play = '', status = 'Okay'):
+    return "I'm go."
+
 if __name__ == "__main__":
     main()
 
