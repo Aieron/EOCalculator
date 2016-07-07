@@ -1,39 +1,37 @@
-import shelve
+def main():
+    import shelve
 
-s = shelve.open('drows.db')
-try:
-    s['drows'] = {1: 'foo', 2: 'bar', 3: 'go'}
-finally:
-    s.close()
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
 
-s = shelve.open('drows.db')
-drow = s['drows']
+    scope = ['https://spreadsheets.google.com/feeds']
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
+    gc = gspread.authorize(credentials)
+    wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
+    sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
+    worksheet = sh.get_worksheet(0)
+    
+    s = shelve.open('drows.db')
+    try:
+        s['drows'] = {
+            'foo': {1: 'foo', 2: 'bar', 3: 'go'}
+        }
+    finally:
+        s.close()
 
-"""for item in drow:
-    Prints values instead of the keys
-    print(drow[item])
+    s = shelve.open('drows.db')
+    drow = s['drows']
 
-    Prints keys
-    print(item)
+    for item in drow:
+        """Prints keys"""
+        print(item)
+        """Prints values instead of the keys"""
+        print(drow[item])
 
+if __name__ == "__main__":
+    main()
 
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-scope = ['https://spreadsheets.google.com/feeds']
-
-credentials = ServiceAccountCredentials.from_json_keyfile_name('Ember EXP Calculator-52eb5a75472e.json', scope)
-
-gc = gspread.authorize(credentials)
-
-wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-
-sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
-
-
-worksheet = sh.get_worksheet(0)
-
-
+"""
 def calculator(row_number: int, column_number: int, character_level: int) -> int:
     base_level = int(worksheet.cell(row_number, (column_number + 2)).value)
     base_eppd = int(worksheet.cell(row_number, (column_number + 3)).value)
