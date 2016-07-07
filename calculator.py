@@ -1,3 +1,6 @@
+import glob
+
+
 def main():
     import shelve
     import gspread
@@ -20,6 +23,8 @@ def main():
 
     allrows = shelve.open('drows.db')
 
+    print(glob.DRSOURCE)
+
     fargs = {}
     for item in allrows['0']:
         fname = allrows['0'][item]
@@ -27,21 +32,22 @@ def main():
             fargs[fname] = {}
             from funcsigs import _empty, signature
             sig = signature(eval(fname))
-            print("%s is a function with arguments %s" % (fname, sig))
+            # print("%s is a function with arguments %s" % (fname, sig))
             for param in sig.parameters.values():
                 pname = param.name
                 pdefault = param.default
                 if pdefault is _empty:
                     fargs[fname][pname] = None
-                    print ('Required parameter: %s %s' % (fname, pname))
+                    # print ('Required parameter: %s %s' % (fname, pname))
                 else:
                     fargs[fname][pname] = pdefault
-                    print('I have default value for: %s %s %s' % (fname, pname, pdefault))
-    print(fargs)
+                    # print('I have default value for: %s %s %s' % (fname, pname, pdefault))
+    # print(fargs)
 
     for item in allrows:
         if item != '0':
-            print("%s: %s" % (item, allrows[item]))
+            # print("%s: %s" % (item, allrows[item]))
+            pass
 
 
 def delrow(allrows, rowkey):
