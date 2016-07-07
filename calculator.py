@@ -2,7 +2,6 @@ import glob
 
 
 def main():
-    import shelve
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
 
@@ -12,18 +11,39 @@ def main():
     wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
     sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
     worksheet = sh.get_worksheet(0)
+    allrows = ''
+    if glob.DBSOURCE == 'local':
+        import shelve
+        allrows = shelve.open('drows.db')
+        try:
+            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
+            allrows['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!', 'knights': '?'}
+            allrows['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
+        finally:
+            allrows.close()
+        allrows = shelve.open('drows.db')
+    elif glob.DBSOURCE == 'gdocs':
+        import shelve
+        allrows = shelve.open('drows.db')
+        try:
+            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
+            allrows['Hello'] = {'foo': 'Bye', 'bar': 'earth', 'go': '!', 'knights': '?'}
+            allrows['Spam'] = {'foo': 'Eggs', 'bar': 'spam', 'go': '?', 'knights': '?'}
+        finally:
+            allrows.close()
+        allrows = shelve.open('drows.db')
+    else:
+        import shelve
+        allrows = shelve.open('drows.db')
+        try:
+            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
+            allrows['Hello'] = {'foo': 'Hello3', 'bar': 'world', 'go': '!', 'knights': '?'}
+            allrows['Spam'] = {'foo': 'Spam3', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
+        finally:
+            allrows.close()
+        allrows = shelve.open('drows.db')
 
-    allrows = shelve.open('drows.db')
-    try:
-        allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
-        allrows['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!', 'knights': '?'}
-        allrows['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
-    finally:
-        allrows.close()
-
-    allrows = shelve.open('drows.db')
-
-    print(glob.DRSOURCE)
+    print(glob.DBSOURCE)
 
     fargs = {}
     for item in allrows['0']:
@@ -46,7 +66,7 @@ def main():
 
     for item in allrows:
         if item != '0':
-            # print("%s: %s" % (item, allrows[item]))
+            print("%s: %s" % (item, allrows[item]))
             pass
 
 
