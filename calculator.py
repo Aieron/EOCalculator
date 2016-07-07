@@ -12,10 +12,6 @@ def main():
 
     s = shelve.open('drows.db')
     try:
-        try:
-            del s['drows']
-        except:
-            pass
         s['foo'] = {1: 'foo', 2: 'bar', 3: 'go'}
         s['bar'] = {1: 'foo', 2: 'bar', 3: 'go'}
 
@@ -28,8 +24,16 @@ def main():
         # print(item + ": " + str(s[item]))
         print("%s: %s" % (item, s[item]))
 
+
+# noinspection PyBroadException
+def delrow(s, rowkey):
+    try:
+        del s[rowkey]
+    except:
+        pass
 if __name__ == "__main__":
     main()
+
 
 """
 def calculator(row_number: int, column_number: int, character_level: int) -> int:
