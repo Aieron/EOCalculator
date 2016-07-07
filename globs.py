@@ -1,1 +1,2 @@
-DBSOURCE = 'gdocs'
+DBSOURCE = ''
+lastrow = 0

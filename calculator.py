@@ -3,16 +3,18 @@ import globs
 
 def main():
     allrows = ''
+    globs.DBSOURCE = 'gdocs'
     if globs.DBSOURCE == 'local':
         import shelve
         allrows = shelve.open('drows.db')
         try:
-            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
-            allrows['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!', 'knights': '?'}
-            allrows['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
+            allrows['1'] = ['foo', 'bar', 'go', 'knights']
+            allrows['2'] = ['Hello', 'world', '!', '?']
+            allrows['3'] = ['Spam', 'Eggs', '?', '?']
         finally:
             allrows.close()
         allrows = shelve.open('drows.db')
+        globs.lastrow = len(allrows)
     elif globs.DBSOURCE == 'gdocs':
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
@@ -20,14 +22,22 @@ def main():
         scope = ['https://spreadsheets.google.com/feeds']
         credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
         gc = gspread.authorize(credentials)
-        wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-        wks.update_acell('H1', "Hello, I'm a test")
-        cell_list = wks.range('A1:H4')
+        allrows = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
+        for globs.lastrow in range(1, allrows.row_count):
+            arow = allrows.row_values(globs.lastrow)
+            if arow is not None:
+                pass
+                print(str(arow))
+            else:
+                break
     else:
         pass
 
-    print(globs.DBSOURCE)
+    print(allrows)
+    print(globs.lastrow)
 
+    return
+'''
     fargs = {}
     for item in allrows['0']:
         fname = allrows['0'][item]
@@ -46,12 +56,13 @@ def main():
                     fargs[fname][pname] = pdefault
                     # print('I have default value for: %s %s %s' % (fname, pname, pdefault))
     # print(fargs)
+'''
 
-    for item in allrows:
-        if item != '0':
-            print("%s: %s" % (item, allrows[item]))
-            pass
-
+'''for item in allrows:
+    if item != '0':
+        print("%s: %s" % (item, allrows[item]))
+        pass
+'''
 
 def delrow(allrows, rowkey):
     try:
