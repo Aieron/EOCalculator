@@ -10,18 +10,19 @@ def main():
     sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
     worksheet = sh.get_worksheet(0)
 
-    s = shelve.open('drows.db')
+    allrows = shelve.open('drows.db')
     try:
-        s['0'] = {1: 'foo', 2: 'bar', 3: 'go'}
-        s['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!'}
-        s['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?'}
+        allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
+        allrows['Hello'] = {'foo': 'Hello', 'bar': 'world', 'go': '!', 'knights': '?'}
+        allrows['Spam'] = {'foo': 'Spam', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
     finally:
-        s.close()
-    s = shelve.open('drows.db')
+        allrows.close()
+
+    allrows = shelve.open('drows.db')
 
     fargs = {}
-    for item in s['0']:
-        fname = s['0'][item]
+    for item in allrows['0']:
+        fname = allrows['0'][item]
         if fname in globals():
             fargs[fname] = {}
             from funcsigs import _empty, signature
@@ -31,23 +32,27 @@ def main():
                 pname = param.name
                 pdefault = param.default
                 if pdefault is _empty:
+                    fargs[fname][pname] = None
                     print ('Required parameter: %s %s' % (fname, pname))
                 else:
                     fargs[fname][pname] = pdefault
                     print('I have default value for: %s %s %s' % (fname, pname, pdefault))
     print(fargs)
 
-    for item in s:
+    for item in allrows:
         if item != '0':
-            print("%s: %s" % (item, s[item]))
+            print("%s: %s" % (item, allrows[item]))
 
 
-# noinspection PyBroadException
-def delrow(s, rowkey):
+def delrow(allrows, rowkey):
     try:
-        del s[rowkey]
+        del allrows[rowkey]
     except:
         pass
+
+
+def knights():
+    return "Hi, I'm a knight."
 
 
 def go(job, play = '', status = 'Okay'):
