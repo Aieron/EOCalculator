@@ -1,6 +1,5 @@
 def main():
     import shelve
-
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
 
@@ -10,23 +9,24 @@ def main():
     wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
     sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
     worksheet = sh.get_worksheet(0)
-    
+
     s = shelve.open('drows.db')
     try:
-        s['drows'] = {
-            'foo': {1: 'foo', 2: 'bar', 3: 'go'}
-        }
+        try:
+            del s['drows']
+        except:
+            pass
+        s['foo'] = {1: 'foo', 2: 'bar', 3: 'go'}
+        s['bar'] = {1: 'foo', 2: 'bar', 3: 'go'}
+
     finally:
         s.close()
-
     s = shelve.open('drows.db')
-    drow = s['drows']
 
-    for item in drow:
-        """Prints keys"""
-        print(item)
+    for item in s:
         """Prints values instead of the keys"""
-        print(drow[item])
+        # print(item + ": " + str(s[item]))
+        print("%s: %s" % (item, s[item]))
 
 if __name__ == "__main__":
     main()
