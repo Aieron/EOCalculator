@@ -2,15 +2,6 @@ import glob
 
 
 def main():
-    import gspread
-    from oauth2client.service_account import ServiceAccountCredentials
-
-    scope = ['https://spreadsheets.google.com/feeds']
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
-    gc = gspread.authorize(credentials)
-    wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-    sh = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs')
-    worksheet = sh.get_worksheet(0)
     allrows = ''
     if glob.DBSOURCE == 'local':
         import shelve
@@ -23,25 +14,17 @@ def main():
             allrows.close()
         allrows = shelve.open('drows.db')
     elif glob.DBSOURCE == 'gdocs':
-        import shelve
-        allrows = shelve.open('drows.db')
-        try:
-            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
-            allrows['Hello'] = {'foo': 'Bye', 'bar': 'earth', 'go': '!', 'knights': '?'}
-            allrows['Spam'] = {'foo': 'Eggs', 'bar': 'spam', 'go': '?', 'knights': '?'}
-        finally:
-            allrows.close()
-        allrows = shelve.open('drows.db')
+        import gspread
+        from oauth2client.service_account import ServiceAccountCredentials
+
+        scope = ['https://spreadsheets.google.com/feeds']
+        credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
+        gc = gspread.authorize(credentials)
+        wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
+        wks.update_acell('H1', "Hello, I'm a test")
+        cell_list = wks.range('A1:H4')
     else:
-        import shelve
-        allrows = shelve.open('drows.db')
-        try:
-            allrows['0'] = {1: 'foo', 2: 'bar', 3: 'go', 4: 'knights'}
-            allrows['Hello'] = {'foo': 'Hello3', 'bar': 'world', 'go': '!', 'knights': '?'}
-            allrows['Spam'] = {'foo': 'Spam3', 'bar': 'Eggs', 'go': '?', 'knights': '?'}
-        finally:
-            allrows.close()
-        allrows = shelve.open('drows.db')
+        pass
 
     print(glob.DBSOURCE)
 
@@ -50,7 +33,7 @@ def main():
         fname = allrows['0'][item]
         if fname in globals():
             fargs[fname] = {}
-            from funcsigs import _empty, signature
+            from inspect import _empty, signature
             sig = signature(eval(fname))
             # print("%s is a function with arguments %s" % (fname, sig))
             for param in sig.parameters.values():

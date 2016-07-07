@@ -1,1 +1,1 @@
-DBSOURCE = 'local'
+DBSOURCE = 'gdocs'
