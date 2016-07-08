@@ -2,9 +2,14 @@ import globs
 
 
 def main():
+
+    for dbsource in ['gdocs', 'local']:
+        dosheet(dbsource)
+
+
+def dosheet(dbsource):
     allrows = ''
-    globs.DBSOURCE = 'gdocs'
-    if globs.DBSOURCE == 'local':
+    if dbsource == 'local':
         import shelve
         import csv
         allrows = shelve.open('drows.db')
@@ -16,7 +21,7 @@ def main():
         allrows = shelve.open('drows.db')
         for rowkey in allrows:
             print(allrows[rowkey])
-    elif globs.DBSOURCE == 'gdocs':
+    elif dbsource == 'gdocs':
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
 
