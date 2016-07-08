@@ -3,16 +3,16 @@ import globs
 
 def main():
     allrows = ''
-    globs.DBSOURCE = 'gdocs'
+    globs.DBSOURCE = 'local'
     if globs.DBSOURCE == 'local':
         import shelve
+        import csv
         allrows = shelve.open('drows.db')
-        try:
-            allrows['1'] = ['foo', 'bar', 'go', 'knights']
-            allrows['2'] = ['Hello', 'world', '!', '?']
-            allrows['3'] = ['Spam', 'Eggs', '?', '?']
-        finally:
-            allrows.close()
+        with open('sample.csv', newline='') as f:
+            reader = csv.reader(f)
+            for globs.lastrow, row in enumerate(reader):
+                allrows[str(globs.lastrow)] = row
+        allrows.close()
         allrows = shelve.open('drows.db')
         globs.lastrow = len(allrows)
     elif globs.DBSOURCE == 'gdocs':
@@ -25,7 +25,8 @@ def main():
         allrows = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
         for globs.lastrow in range(1, allrows.row_count):
             arow = allrows.row_values(globs.lastrow)
-            if arow is not None:
+            if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                        '', '']:
                 pass
                 print(str(arow))
             else:
