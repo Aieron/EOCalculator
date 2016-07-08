@@ -5,6 +5,8 @@ def main():
 
     for dbsource in ['gdocs', 'local']:
         dosheet(dbsource)
+        print(globs.fargs)
+        print()
 
 
 def dosheet(dbsource):
@@ -15,12 +17,12 @@ def dosheet(dbsource):
         allrows = shelve.open('drows.db')
         with open('sample.csv', newline='') as f:
             reader = csv.reader(f)
-            for globs.lastrow, row in enumerate(reader):
-                allrows[str(globs.lastrow)] = row
+            for rowdex, arow in enumerate(reader):
+                allrows[str(rowdex + 1)] = arow
         allrows.close()
         allrows = shelve.open('drows.db')
-        for rowkey in allrows:
-            print(allrows[rowkey])
+        for rowkey in sorted(allrows):
+            dorow(rowkey, allrows[rowkey])
     elif dbsource == 'gdocs':
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
@@ -29,59 +31,47 @@ def dosheet(dbsource):
         credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
         gc = gspread.authorize(credentials)
         wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-        for globs.lastrow in range(1, wks.row_count):
-            arow = wks.row_values(globs.lastrow)
+        for rowdex in range(1, wks.row_count):
+            arow = wks.row_values(rowdex)
             if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
                         '', '']:
-                print(str(arow))
+                dorow(str(rowdex), arow)
             else:
                 break
     else:
         pass
 
-    # print(allrows)
-    # print(globs.lastrow)
 
-    return
-'''
+def dorow(rownum, arow):
+    if rownum == '1':
+        dofuncs(arow)
+    else:
+        print(arow)
+
+
+def dofuncs(arow):
     fargs = {}
-    for item in allrows['0']:
-        fname = allrows['0'][item]
+    for rowdex, fname in enumerate(arow):
+        rowdex += 1
         if fname in globals():
-            fargs[fname] = {}
+            fargs[rowdex] = {}
             from inspect import _empty, signature
             sig = signature(eval(fname))
-            # print("%s is a function with arguments %s" % (fname, sig))
             for param in sig.parameters.values():
                 pname = param.name
                 pdefault = param.default
                 if pdefault is _empty:
-                    fargs[fname][pname] = None
-                    # print ('Required parameter: %s %s' % (fname, pname))
+                    fargs[rowdex][pname] = None
                 else:
-                    fargs[fname][pname] = pdefault
-                    # print('I have default value for: %s %s %s' % (fname, pname, pdefault))
-    # print(fargs)
-'''
-
-'''for item in allrows:
-    if item != '0':
-        print("%s: %s" % (item, allrows[item]))
-        pass
-'''
-
-def delrow(allrows, rowkey):
-    try:
-        del allrows[rowkey]
-    except:
-        pass
+                    fargs[rowdex][pname] = pdefault
+    globs.fargs = fargs
 
 
-def knights():
+def Func1():
     return "Hi, I'm a knight."
 
 
-def go(job, play = '', status = 'Okay'):
+def Func2(param1, param2 = '', status = 'Okay'):
     return "I'm go."
 
 if __name__ == "__main__":
