@@ -2,7 +2,7 @@ import globs
 
 
 def main():
-
+    globs.gfuncs = [x.lower() for x in globals().keys() if x[:2] != '__']
     for dbsource in ['gdocs', 'local']:
         dosheet(dbsource)
         print()
@@ -43,11 +43,11 @@ def dosheet(dbsource):
 
 def dorow(rownum, arow):
     if rownum == '1':
-        globs.funcs = arow
+        globs.funcs = [x.lower() for x in arow]
         row1funcs(arow)
     else:
         for coldex, acell in enumerate(arow):
-            if globs.funcs[coldex] in globals():
+            if globs.funcs[coldex] in globs.gfuncs:
                 if acell == "":
                     pass
                 else:
@@ -72,7 +72,7 @@ def evalfunc(coldex, arow):
 def row1funcs(arow):
     fargs = {}
     for coldex, fname in enumerate(arow):
-        if fname in globals():
+        if fname.lower() in globs.gfuncs:
             fargs[coldex] = {}
             from inspect import _empty, signature
             sig = signature(eval(fname))

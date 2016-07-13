@@ -1,2 +1,3 @@
 fargs = {}
 funcs = []
+gfuncs = []
