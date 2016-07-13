@@ -5,7 +5,6 @@ def main():
 
     for dbsource in ['gdocs', 'local']:
         dosheet(dbsource)
-        print(globs.fargs)
         print()
 
 
@@ -44,35 +43,55 @@ def dosheet(dbsource):
 
 def dorow(rownum, arow):
     if rownum == '1':
-        dofuncs(arow)
+        globs.funcs = arow
+        row1funcs(arow)
     else:
-        print(arow)
+        for coldex, acell in enumerate(arow):
+            if globs.funcs[coldex] in globals():
+                if acell == "":
+                    pass
+                else:
+                    if acell == "?":
+                        evalfunc(coldex, arow)
 
 
-def dofuncs(arow):
+def evalfunc(coldex, arow):
+    fname = globs.funcs[coldex]
+    fargs = globs.fargs[coldex]
+    evalme = "%s(" % fname
+    if fargs:
+        # print(fname, fargs)
+        for anarg in fargs:
+            evalme = "%s%s='xxx', " % (evalme, anarg)
+            # if fargs[anarg] is None:
+                # print(fname, anarg)
+        evalme = evalme[:-2] + ")"
+        print(evalme)
+
+
+def row1funcs(arow):
     fargs = {}
-    for rowdex, fname in enumerate(arow):
-        rowdex += 1
+    for coldex, fname in enumerate(arow):
         if fname in globals():
-            fargs[rowdex] = {}
+            fargs[coldex] = {}
             from inspect import _empty, signature
             sig = signature(eval(fname))
             for param in sig.parameters.values():
                 pname = param.name
                 pdefault = param.default
                 if pdefault is _empty:
-                    fargs[rowdex][pname] = None
+                    fargs[coldex][pname] = None
                 else:
-                    fargs[rowdex][pname] = pdefault
+                    fargs[coldex][pname] = pdefault
     globs.fargs = fargs
 
 
 def Func1():
-    return "Hi, I'm a knight."
+    return "Hi, I'm Func1."
 
 
-def Func2(param1, param2 = '', status = 'Okay'):
-    return "I'm go."
+def Func2(param1, param2='', status = 'Okay'):
+    return "My params are: %s, %s" % (param1, param2)
 
 if __name__ == "__main__":
     main()
