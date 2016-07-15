@@ -2,77 +2,108 @@ import globs
 
 
 def main():
-    globs.gfuncs = [x.lower() for x in globals().keys() if x[:2] != '__']
-    for dbsource in ['gdocs', 'local']:
-        dosheet(dbsource)
+    funcs = [x for x in globals().keys() if x[:2] != '__']  # List all functions
+    globs.funcslc = [x.lower() for x in funcs]  # Set all function names to lower case
+    globs.transfuncs = dict(zip(globs.funcslc, funcs))  # Keep case translation table
+    for dbsource in ['gdocs', 'local']:  # Each dbsource represents one worksheet
+        dbmethod = {"local": dblocal, "gdocs": dbgdocs}
+        dbmethod[dbsource]()
         print()
 
 
-def dosheet(dbsource):
-    allrows = ''
-    if dbsource == 'local':
-        import shelve
-        import csv
-        allrows = shelve.open('drows.db')
-        with open('sample.csv', newline='') as f:
-            reader = csv.reader(f)
-            for rowdex, arow in enumerate(reader):
-                allrows[str(rowdex + 1)] = arow
-        allrows.close()
-        allrows = shelve.open('drows.db')
-        for rowkey in sorted(allrows):
-            dorow(rowkey, allrows[rowkey])
-    elif dbsource == 'gdocs':
-        import gspread
-        from oauth2client.service_account import ServiceAccountCredentials
-
-        scope = ['https://spreadsheets.google.com/feeds']
-        credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
-        gc = gspread.authorize(credentials)
-        wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-        for rowdex in range(1, wks.row_count):
-            arow = wks.row_values(rowdex)
-            if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-                        '', '']:
-                dorow(str(rowdex), arow)
-            else:
-                break
-    else:
-        pass
+def dblocal():
+    import shelve
+    import csv
+    allrows = shelve.open('drows.db')
+    with open('sample.csv', newline='') as f:
+        reader = csv.reader(f)
+        for rowdex, arow in enumerate(reader):
+            allrows[str(rowdex + 1)] = arow
+    allrows.close()
+    allrows = shelve.open('drows.db')
+    for rowkey in sorted(allrows):
+        newrow = processrow(rowkey, allrows[rowkey])
 
 
-def dorow(rownum, arow):
+def dbgdocs():
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+    scope = ['https://spreadsheets.google.com/feeds']
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
+    gc = gspread.authorize(credentials)
+    wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
+    for rowdex in range(1, wks.row_count):
+        arow = wks.row_values(rowdex)
+        if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                    '', '']:
+            newrow = processrow(str(rowdex), arow)
+            for coldex, acell in enumerate(newrow):
+                if acell != '':
+                    coldex += 1
+                    if rowdex != 1:
+                        if arow[coldex-1] == '?':
+                            wks.update_cell(rowdex, coldex, acell)
+                            # print(rowdex, coldex, arow[coldex-1], acell)
+                else:
+                    break
+        else:
+            break
+
+
+def processrow(rownum, arow):
+    changedrow = arow[:]
     if rownum == '1':
-        globs.funcs = [x.lower() for x in arow]
-        row1funcs(arow)
+        globs.row1 = [x.lower() for x in changedrow]
+        row1funcs(changedrow)
     else:
-        for coldex, acell in enumerate(arow):
-            if globs.funcs[coldex] in globs.gfuncs:
+        for coldex, acell in enumerate(changedrow):
+            if globs.row1[coldex] in globs.funcslc:
                 if acell == "":
                     pass
                 else:
                     if acell == "?":
-                        evalfunc(coldex, arow)
+                        changedrow[coldex] = evalfunc(coldex, changedrow)
+    return changedrow
 
 
 def evalfunc(coldex, arow):
-    fname = globs.funcs[coldex]
+    fname = globs.transfuncs[globs.row1[coldex]]
     fargs = globs.fargs[coldex]
     evalme = "%s(" % fname
     if fargs:
-        # print(fname, fargs)
         for anarg in fargs:
-            evalme = "%s%s='xxx', " % (evalme, anarg)
-            # if fargs[anarg] is None:
-                # print(fname, anarg)
+            anarg = anarg.lower()
+            argval = getargval(anarg, fargs[anarg], arow)
+            evalme = "%s%s=%s, " % (evalme, anarg, argval)
         evalme = evalme[:-2] + ")"
-        print(evalme)
+    else:
+        evalme += ')'
+    # return '%s: %s' % (evalme, eval(evalme))
+    return eval(evalme)
+
+
+def getargval(anarg, defargval, arow):
+    for coldex, acol in enumerate(globs.row1):
+        if acol == anarg:
+            if arow[coldex]:
+                return adq(arow[coldex])
+    if defargval:
+        return adq(defargval)
+    else:
+        return 'foo'
+
+
+def adq(aval):
+    if aval is None:
+        return None
+    else:
+        return "'%s'" % aval
 
 
 def row1funcs(arow):
     fargs = {}
     for coldex, fname in enumerate(arow):
-        if fname.lower() in globs.gfuncs:
+        if fname.lower() in globs.funcslc:
             fargs[coldex] = {}
             from inspect import _empty, signature
             sig = signature(eval(fname))
@@ -87,11 +118,11 @@ def row1funcs(arow):
 
 
 def Func1():
-    return "Hi, I'm Func1."
+    return "Out from func1"
 
 
 def Func2(param1, param2='', status = 'Okay'):
-    return "My params are: %s, %s" % (param1, param2)
+    return "%s %s" % (param1, param2)
 
 if __name__ == "__main__":
     main()

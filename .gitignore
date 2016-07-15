@@ -4,4 +4,4 @@ C:\Users\Keith\Documents\repos\EXP Calculator\Google Credentials.JSON
 *.db.dir
 __pycache__/
 *.db
-*.JSON
+*.json
