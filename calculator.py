@@ -21,48 +21,62 @@ def dblocal():
             allrows[str(rowdex + 1)] = arow
     allrows.close()
     allrows = shelve.open('drows.db')
-    for rowkey in sorted(allrows):
+    for rowkey in sorted(allrows):  # Process each row (list) from the shelve
         newrow = processrow(rowkey, allrows[rowkey])
+        allrows[rowkey] = newrow
+    with open('sample.csv', 'w', newline='') as f:
+        w = csv.writer(f)
+        for rowkey in sorted(allrows):
+            w.writerow(allrows[rowkey])
 
 
 def dbgdocs():
+    """Keeps a Google Spreadsheet open for row-by-row processing.
+
+    While Google Spreadsheets is not the most efficient or scalable way to manage
+    this process. It provides a ready-made user interface for convenient
+    interactive sessions with smaller datasets. Demonstrating this approach to
+    people is impressive and has compelling charm."""
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
     scope = ['https://spreadsheets.google.com/feeds']
     credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
     gc = gspread.authorize(credentials)
     wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
-    for rowdex in range(1, wks.row_count):
+    for rowdex in range(1, wks.row_count):  # Start stepping through every row.
         arow = wks.row_values(rowdex)
         if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-                    '', '']:
-            newrow = processrow(str(rowdex), arow)
-            for coldex, acell in enumerate(newrow):
-                if acell != '':
-                    coldex += 1
-                    if rowdex != 1:
-                        if arow[coldex-1] == '?':
-                            wks.update_cell(rowdex, coldex, acell)
-                            # print(rowdex, coldex, arow[coldex-1], acell)
-                else:
-                    break
+                    '', '']:  # Only processes it if it does not come back as an empty list.
+            newrow = processrow(str(rowdex), arow)  # Replace question marks in row
+            for coldex, acell in enumerate(newrow):  # Then step through new row
+                if questionmark(arow, rowdex, coldex, acell):  # Update Google worksheet
+                    wks.update_cell(rowdex, coldex+1, acell)  # Gspread starts at column 1
         else:
-            break
+            break  # Stop grabbing new rows at the first empty row encountered.
 
 
-def processrow(rownum, arow):
+def questionmark(oldrow, rowdex, coldex, acell):
+    """Returns true if a question mark is supposed to be replaced in a cel.
+
+    This is called for every cell on every row processed and checks whether
+    question mark replacement should actually occur."""
+    if acell != '':
+        if rowdex != 1:
+            if globs.row1[coldex] in globs.funcslc:
+                if oldrow[coldex] == '?':
+                    return True
+    return False
+
+
+def processrow(rowdex, arow):
     changedrow = arow[:]
-    if rownum == '1':
+    if str(rowdex) == '1':
         globs.row1 = [x.lower() for x in changedrow]
         row1funcs(changedrow)
     else:
         for coldex, acell in enumerate(changedrow):
-            if globs.row1[coldex] in globs.funcslc:
-                if acell == "":
-                    pass
-                else:
-                    if acell == "?":
-                        changedrow[coldex] = evalfunc(coldex, changedrow)
+            if questionmark(arow, rowdex, coldex, acell):
+                changedrow[coldex] = evalfunc(coldex, changedrow)
     return changedrow
 
 
