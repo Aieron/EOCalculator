@@ -40,7 +40,7 @@ def dbgdocs():
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
     scope = ['https://spreadsheets.google.com/feeds']
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('Google Credentials.json', scope)
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('Creds.json', scope)
     gc = gspread.authorize(credentials)
     wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
     for rowdex in range(1, wks.row_count):  # Start stepping through every row.
