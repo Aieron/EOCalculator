@@ -1,4 +1,14 @@
 import globs
+from flask import Flask, request
+app = Flask(__name__)
+
+
+@app.route("/")
+def hello():
+    if "go" in request.args:
+        main()
+        return "Replaced questionmarks"
+    return "Doing nothing"
 
 
 def main():
@@ -138,9 +148,11 @@ def Func1():
 def Func2(param1, param2='', status = 'Okay'):
     return "%s %s" % (param1, param2)
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#    main()
 
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 """
 def calculator(row_number: int, column_number: int, character_level: int) -> int:
