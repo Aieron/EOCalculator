@@ -1,15 +1,16 @@
 import globs
 from flask import Flask, request, render_template
 from flask_wtf import Form
-from wtforms import validators, StringField
 from flask_wtf.file import FileField
+from wtforms import StringField
+from wtforms.validators import DataRequired, Optional
 
 app = Flask(__name__)
 
 
 class CalcForm(Form):
-    gkey = StringField('Your Google Spreadsheet Key', [validators.required()])
-    csvfile = FileField('Your CSV file')
+    gkey = StringField('Your Google Spreadsheet Key', [RequiredIf(csvfile='')])
+    csvfile = FileField('Your CSV file', [RequiredIf(gkey='')])
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -170,6 +171,28 @@ def row1funcs(arow):
                 else:
                     fargs[coldex][pname] = pdefault
     globs.fargs = fargs
+
+
+class RequiredIf(object):
+    """Validates field conditionally.
+    Usage::
+        login_method = StringField('', [AnyOf(['email', 'facebook'])])
+        email = StringField('', [RequiredIf(login_method='email')])
+        password = StringField('', [RequiredIf(login_method='email')])
+        facebook_token = StringField('', [RequiredIf(login_method='facebook')])
+    """
+    def __init__(self, *args, **kwargs):
+        self.conditions = kwargs
+
+    def __call__(self, form, field):
+        for name, data in self.conditions.items():
+            if name not in form._fields:
+                Optional(form, field)
+            else:
+                condition_field = form._fields.get(name)
+                if condition_field.data == data and not field.data:
+                    DataRequired()(form, field)
+        Optional()(form, field)
 
 
 def Func1():
