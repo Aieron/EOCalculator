@@ -1,33 +1,52 @@
 import globs
-from flask import Flask, request
+from flask import Flask, request, render_template
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def hello():
-    if "go" in request.args:
-        main()
-        return "Replaced questionmarks"
-    return "Doing nothing"
+    if request.method == "POST":
+        # A hook for uploading CSV files
+        return "CSV file upload"
+    else:
+        if request.args:
+            if "gkey" in request.args:
+                globs.GKEY = request.args.get('gkey')
+                main()
+                return "Replaced questionmarks"
+        else:
+            return render_template('calculator.html', name="Keith")
 
 
 def main():
+    """Allow processing of multiple worksheets.
+
+    During testing, main is set to process one Google Spreadsheet and one local
+    csv file. It also creates a list of global functions and translates them via
+    translation table to their lower-case versions for recognizing function names
+    in column labels. A Pythonic switch statement calls dbgdocs once and dblocal
+    once."""
     funcs = [x for x in globals().keys() if x[:2] != '__']  # List all functions
     globs.funcslc = [x.lower() for x in funcs]  # Set all function names to lower case
     globs.transfuncs = dict(zip(globs.funcslc, funcs))  # Keep case translation table
+    dbmethod = {"local": dblocal, "gdocs": dbgdocs}
     for dbsource in ['gdocs', 'local']:  # Each dbsource represents one worksheet
-        dbmethod = {"local": dblocal, "gdocs": dbgdocs}
         dbmethod[dbsource]()
         print()
 
 
 def dblocal():
-    import shelve
-    import csv
+    """Loads a local csv file and dumps it into a shelve object for processing.
+
+    While support for csv files will be very useful for many people, using the
+    shelve API here is to leave a hook for the external shove library which will
+    allow this to run on larger datasets by connecting it to other mainstream
+    database services."""
+    import shelve, csv
     allrows = shelve.open('drows.db')
     with open('sample.csv', newline='') as f:
         reader = csv.reader(f)
-        for rowdex, arow in enumerate(reader):
+        for rowdex, arow in enumerate(reader):  # Dump entire csv into shelve.
             allrows[str(rowdex + 1)] = arow
     allrows.close()
     allrows = shelve.open('drows.db')
@@ -52,7 +71,7 @@ def dbgdocs():
     scope = ['https://spreadsheets.google.com/feeds']
     credentials = ServiceAccountCredentials.from_json_keyfile_name('Creds.json', scope)
     gc = gspread.authorize(credentials)
-    wks = gc.open_by_key('1qlgeGmj3ES6Sf_iIXuUJQURl9HoQ5sVlpN_VO_FH1Gs').sheet1
+    wks = gc.open_by_key(globs.GKEY).sheet1
     for rowdex in range(1, wks.row_count):  # Start stepping through every row.
         arow = wks.row_values(rowdex)
         if arow != ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
