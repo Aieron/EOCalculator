@@ -1,7 +1,11 @@
 <!doctype html>
-<title>Hello from Flask</title>
-{% if name %}
-  <h1>Hello {{ name }}!</h1>
-{% else %}
-  <h1>Hello, World!</h1>
-{% endif %}
+<title>Ember Online EXP Calculator</title>
+<h1>Ember Online EXP Calculator</h1>
+<form method="POST" action="/">
+    {{ form.hidden_tag() }}
+    {{ form.gkey.label }} {{ form.gkey(size=60) }}
+    <br />
+    {{ form.csvfile.label }} {{ form.csvfile() }}
+    <br />
+    <input type="submit" value="Calculate">
+</form>

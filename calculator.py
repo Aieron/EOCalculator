@@ -1,24 +1,36 @@
 import globs
 from flask import Flask, request, render_template
+from flask_wtf import Form
+from wtforms import validators, StringField
+from flask_wtf.file import FileField
+
 app = Flask(__name__)
 
 
+class CalcForm(Form):
+    gkey = StringField('Your Google Spreadsheet Key', [validators.required()])
+    csvfile = FileField('Your CSV file')
+
+
 @app.route("/", methods=['GET', 'POST'])
-def hello():
+def main():
     if request.method == "POST":
-        # A hook for uploading CSV files
-        return "CSV file upload"
+        form = CalcForm(csrf_enabled=False)
+        if form.validate_on_submit():
+            return "I would calculate now."
+        return render_template('calculator.html', form=form)
     else:
         if request.args:
             if "gkey" in request.args:
                 globs.GKEY = request.args.get('gkey')
-                main()
+                calculator()
                 return "Replaced questionmarks"
         else:
-            return render_template('calculator.html', name="Keith")
+            form = CalcForm(csrf_enabled=False)
+            return render_template('calculator.html', form=form)
 
 
-def main():
+def calculator():
     """Allow processing of multiple worksheets.
 
     During testing, main is set to process one Google Spreadsheet and one local
