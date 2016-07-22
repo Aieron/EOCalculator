@@ -8,9 +8,36 @@ from wtforms.validators import DataRequired, Optional
 app = Flask(__name__)
 
 
+class RequiredIf(object):
+    """Validates field conditionally.
+    Usage::
+        login_method = StringField('', [AnyOf(['email', 'facebook'])])
+        email = StringField('', [RequiredIf(login_method='email')])
+        password = StringField('', [RequiredIf(login_method='email')])
+        facebook_token = StringField('', [RequiredIf(login_method='facebook')])
+    """
+    def __init__(self, *args, **kwargs):
+        self.conditions = kwargs
+
+    def __call__(self, form, field):
+        for name, data in self.conditions.items():
+            if name not in form._fields:
+                Optional(form, field)
+            else:
+                condition_field = form._fields.get(name)
+                if condition_field.data == data and not field.data:
+                    DataRequired()(form, field)
+        Optional()(form, field)
+
+
 class CalcForm(Form):
     gkey = StringField('Your Google Spreadsheet Key', [RequiredIf(csvfile='')])
     csvfile = FileField('Your CSV file', [RequiredIf(gkey='')])
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+            filename.rsplit('.', 1)[1] in globs.ALLOWED_EXTENSIONS
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -18,20 +45,27 @@ def main():
     if request.method == "POST":
         form = CalcForm(csrf_enabled=False)
         if form.validate_on_submit():
-            return "I would calculate now."
+            if form.gkey.data:
+                globs.GKEY = form.gkey.data
+                calculator('gdocs')
+                return "I processed Google Spreadsheet."
+            if form.csvfile.data:
+                import os
+                from werkzeug import secure_filename
+                app.config['UPLOAD_FOLDER'] = globs.UPLOAD_FOLDER
+                file = request.files['csvfile']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                calculator('local')
+                return "I processed an uploaded CSV file."
         return render_template('calculator.html', form=form)
     else:
-        if request.args:
-            if "gkey" in request.args:
-                globs.GKEY = request.args.get('gkey')
-                calculator()
-                return "Replaced questionmarks"
-        else:
-            form = CalcForm(csrf_enabled=False)
-            return render_template('calculator.html', form=form)
+        form = CalcForm(csrf_enabled=False)
+        return render_template('calculator.html', form=form)
 
 
-def calculator():
+def calculator(dbsource):
     """Allow processing of multiple worksheets.
 
     During testing, main is set to process one Google Spreadsheet and one local
@@ -43,9 +77,7 @@ def calculator():
     globs.funcslc = [x.lower() for x in funcs]  # Set all function names to lower case
     globs.transfuncs = dict(zip(globs.funcslc, funcs))  # Keep case translation table
     dbmethod = {"local": dblocal, "gdocs": dbgdocs}
-    for dbsource in ['gdocs', 'local']:  # Each dbsource represents one worksheet
-        dbmethod[dbsource]()
-        print()
+    dbmethod[dbsource]()
 
 
 def dblocal():
@@ -55,9 +87,9 @@ def dblocal():
     shelve API here is to leave a hook for the external shove library which will
     allow this to run on larger datasets by connecting it to other mainstream
     database services."""
-    import shelve, csv
+    import shelve, csv, os
     allrows = shelve.open('drows.db')
-    with open('sample.csv', newline='') as f:
+    with open(os.path.join(app.config['UPLOAD_FOLDER'], 'sample.csv'), newline='') as f:
         reader = csv.reader(f)
         for rowdex, arow in enumerate(reader):  # Dump entire csv into shelve.
             allrows[str(rowdex + 1)] = arow
@@ -171,28 +203,6 @@ def row1funcs(arow):
                 else:
                     fargs[coldex][pname] = pdefault
     globs.fargs = fargs
-
-
-class RequiredIf(object):
-    """Validates field conditionally.
-    Usage::
-        login_method = StringField('', [AnyOf(['email', 'facebook'])])
-        email = StringField('', [RequiredIf(login_method='email')])
-        password = StringField('', [RequiredIf(login_method='email')])
-        facebook_token = StringField('', [RequiredIf(login_method='facebook')])
-    """
-    def __init__(self, *args, **kwargs):
-        self.conditions = kwargs
-
-    def __call__(self, form, field):
-        for name, data in self.conditions.items():
-            if name not in form._fields:
-                Optional(form, field)
-            else:
-                condition_field = form._fields.get(name)
-                if condition_field.data == data and not field.data:
-                    DataRequired()(form, field)
-        Optional()(form, field)
 
 
 def Func1():
