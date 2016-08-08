@@ -55,8 +55,8 @@ def main():
                 app.config['UPLOAD_FOLDER'] = globs.UPLOAD_FOLDER
                 file = request.files['csvfile']
                 if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    globs.FILE = secure_filename(file.filename)
+                    file.save(os.path.join(globs.UPLOAD_FOLDER, globs.FILE))
                 calculator('local')
                 return "I processed an uploaded CSV file."
         return render_template('calculator.html', form=form)
@@ -89,7 +89,7 @@ def dblocal():
     database services."""
     import shelve, csv, os
     allrows = shelve.open('drows.db')
-    with open(os.path.join(app.config['UPLOAD_FOLDER'], 'sample.csv'), newline='') as f:
+    with open(os.path.join(globs.UPLOAD_FOLDER, globs.FILE), newline='') as f:
         reader = csv.reader(f)
         for rowdex, arow in enumerate(reader):  # Dump entire csv into shelve.
             allrows[str(rowdex + 1)] = arow
